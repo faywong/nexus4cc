@@ -210,6 +210,15 @@ app.delete('/api/sessions/:id', authMiddleware, (req, res) => {
   })
 })
 
+// POST /api/sessions/:id/attach — 切换到指定 tmux 窗口
+app.post('/api/sessions/:id/attach', authMiddleware, (req, res) => {
+  const index = req.params.id
+  exec(`tmux select-window -t ${TMUX_SESSION}:${index}`, (err) => {
+    if (err) return res.status(500).json({ error: err.message })
+    res.json({ ok: true })
+  })
+})
+
 // SPA fallback — 所有非 API 路由返回 index.html
 app.get('*', (req, res) => {
   const indexPath = join(__dirname, 'frontend', 'dist', 'index.html');

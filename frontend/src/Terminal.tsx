@@ -96,8 +96,6 @@ export default function Terminal({ token }: Props) {
   const [showNewSession, setShowNewSession] = useState(false)
   const [themeMode, setThemeMode] = useState<ThemeMode>(getInitialTheme)
 
-  const headers = { Authorization: `Bearer ${token}` }
-
   const applyTheme = useCallback((mode: ThemeMode) => {
     const term = termRef.current
     if (!term) return
@@ -121,6 +119,12 @@ export default function Terminal({ token }: Props) {
     applyTheme(themeMode)
   }, [themeMode, applyTheme])
 
+  // 定期刷新窗口列表（每 2 秒），保持与 tmux 同步
+  useEffect(() => {
+    const interval = setInterval(fetchWindows, 2000)
+    return () => clearInterval(interval)
+  }, [])
+
   const scrollToBottom = useCallback(() => {
     termRef.current?.scrollToBottom()
     userScrolledRef.current = false
@@ -128,7 +132,7 @@ export default function Terminal({ token }: Props) {
 
   async function fetchWindows() {
     try {
-      const r = await fetch('/api/sessions', { headers })
+      const r = await fetch('/api/sessions', { headers: { Authorization: `Bearer ${token}` } })
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const d = await r.json()
       const wins = d.windows ?? []
@@ -140,14 +144,26 @@ export default function Terminal({ token }: Props) {
     }
   }
 
-  function attachToWindow(index: number) {
-    sendToWs('\x02' + index.toString())
-    setActiveWindowIndex(index)
+  async function attachToWindow(index: number) {
+    try {
+      const r = await fetch(`/api/sessions/${index}/attach`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (r.ok) {
+        setActiveWindowIndex(index)
+      }
+    } catch {
+      // ignore
+    }
   }
 
   async function closeWindow(index: number) {
     try {
-      const r = await fetch(`/api/sessions/${index}`, { method: 'DELETE', headers })
+      const r = await fetch(`/api/sessions/${index}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
       if (r.ok) {
         await fetchWindows()
       }
@@ -160,10 +176,12 @@ export default function Terminal({ token }: Props) {
     try {
       const r = await fetch('/api/sessions', {
         method: 'POST',
-        headers: { ...headers, 'Content-Type': 'application/json' },
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ rel_path: relPath, shell_type: shellType, profile }),
       })
       if (r.ok) {
+        // 等待一小段时间让 tmux 创建窗口，然后刷新列表
+        await new Promise(resolve => setTimeout(resolve, 300))
         await fetchWindows()
       }
     } catch {
