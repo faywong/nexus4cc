@@ -14,3 +14,15 @@ frontend/node_modules/
 
 # Build output
 frontend/dist/
+
+# E2E tests and screenshots (dev artifacts)
+e2e-*.cjs
+e2e-screenshots/
+screenshots/
+*.pdf
+
+# PM2
+ecosystem.config.cjs
+
+# Runtime data (tasks, session configs)
+data/
