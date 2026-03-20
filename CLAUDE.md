@@ -18,7 +18,7 @@ Anchor: `docs/NORTH-STAR.md` — 修改任何文档前先对照锚点三原则
 
 ## Architecture Constraints
 
-- **单 PTY 架构**（v1）：所有客户端 attach 同一个 `tmux attach-session -t main`
+- **多 PTY 架构**（F-11）：每个 `tmux session:window` 独立 PTY 实例，`ptyMap` 管理
 - **前端 dist 由 Vite 构建**，server.js 静态伺服 `frontend/dist/` + `public/`
 - **no database**：会话状态从 tmux 实时读取，持久化只用 JSON 文件
 - `WORKSPACE_ROOT` 整体挂载进容器，路径与宿主机完全一致
@@ -26,15 +26,21 @@ Anchor: `docs/NORTH-STAR.md` — 修改任何文档前先对照锚点三原则
 ## Key Files
 
 ```
-server.js                  # 唯一后端入口：Express + WS + PTY 桥
+server.js                  # 唯一后端入口：Express + WS + PTY + Tasks + Telegram
+data/                      # Docker volume 持久化（toolbar、tasks、configs）
+public/
+  sw.js                    # Service Worker（cache-first 静态资源）
+  icon.svg                 # PWA 图标
 frontend/src/
   App.tsx                  # 路由：登录页 / 终端页
-  Terminal.tsx             # xterm.js + WebSocket + 触摸处理
+  Terminal.tsx             # xterm.js + WebSocket + 触摸处理 + 双 Effect 模式
   Toolbar.tsx              # 可配置工具栏（固定行 + 展开区）
   TabBar.tsx               # tmux window 标签（< 768px 顶部导航）
-  SessionManager.tsx       # 新建/切换 session 面板
+  TaskPanel.tsx            # claude -p 异步任务面板（SSE 流式）
+  SessionManager.tsx       # 新建/切换 session 面板（lazy）
+  WorkspaceSelector.tsx    # 目录选择器（lazy）
   toolbarDefaults.ts       # 按键定义与出厂配置
-data/                      # Docker volume 持久化
+  windowStatus.ts          # 窗口状态检测（Terminal + TabBar 共享）
 docs/
   NORTH-STAR.md            # 锚点文件（核心问题/用户/Out-of-Scope）
   PRD.md                   # 功能规格

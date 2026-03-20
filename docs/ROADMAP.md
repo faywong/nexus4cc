@@ -86,3 +86,6 @@
 | fix: tasks.json 上限 200 条；窗口输出轮询加 session 参数 | `8cf0aba` |
 | refactor: 抽取 windowStatus.ts，消除 Terminal/TabBar 重复定义 | `044c542` |
 | F-17: 统一 runTask() 抽象（Web + Telegram 共享执行入口） | `605b057` |
+| fix(toolbar): ctrl-a/ctrl-e/ctrl-z 加入出厂展开列表 | `a8c4e6b` |
+| fix(pwa): 仅缓存静态资源，跳过 index.html（修复构建后 404） | `c31cc20` |
+| fix(tasks): 恢复 profile 参数；修复通知图标/正文 | `56f226d` |
