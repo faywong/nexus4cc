@@ -553,6 +553,16 @@ export default function Terminal({ token }: Props) {
     applyTheme(themeMode)
   }, [themeMode, applyTheme])
 
+  // 动态页面标题：反映当前窗口和 Agent 状态
+  useEffect(() => {
+    const win = windows.find(w => w.index === activeWindowIndex)
+    if (!win) { document.title = 'Nexus'; return }
+    const status = getWindowStatus(windowOutputs[activeWindowIndex])
+    const statusSymbol = status === 'running' ? '⚡' : status === 'waiting' ? '⏳' : status === 'shell' ? '💤' : ''
+    document.title = `${statusSymbol ? statusSymbol + ' ' : ''}${win.name} — Nexus`
+    return () => { document.title = 'Nexus' }
+  }, [windows, activeWindowIndex, windowOutputs])
+
   // 定期刷新窗口列表（每 2 秒），保持与 tmux 同步
   useEffect(() => {
     fetchWindows() // 初始立即加载
