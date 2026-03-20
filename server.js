@@ -110,14 +110,13 @@ app.post('/api/sessions', authMiddleware, (req, res) => {
     ...(CLAUDE_PROXY ? { ALL_PROXY: CLAUDE_PROXY, HTTPS_PROXY: CLAUDE_PROXY, HTTP_PROXY: CLAUDE_PROXY } : {}),
   };
 
+  const proxyExports = Object.entries(proxyVars).map(([k, v]) => `export ${k}='${v}'`).join('; ');
+  const proxyPrefix = proxyExports ? `${proxyExports}; ` : '';
+
   let shellCmd;
   if (shell_type === 'bash') {
-    shellCmd = 'zsh';
+    shellCmd = `${proxyPrefix}exec zsh -i`;
   } else {
-    // claude mode: inject proxy env vars so claude can reach the API
-    // 使用 export 让变量持久化到 shell 环境，后续 zsh 也能继承
-    const proxyExports = Object.entries(proxyVars).map(([k, v]) => `export ${k}='${v}'`).join('; ');
-    const proxyPrefix = proxyExports ? `${proxyExports}; ` : '';
     if (profile) {
       const runScript = join(__dirname, 'nexus-run-claude.sh');
       shellCmd = `${proxyPrefix}bash "${runScript}" ${profile} ${cwd}`;
