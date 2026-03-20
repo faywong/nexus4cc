@@ -982,6 +982,7 @@ export default function Terminal({ token }: Props) {
   useEffect(() => {
     setIsScrolledUp(false)
     userScrolledRef.current = false
+    hasConnectedRef.current = false
 
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
 
