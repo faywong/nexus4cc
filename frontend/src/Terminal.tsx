@@ -1156,17 +1156,33 @@ export default function Terminal({ token }: Props) {
     }
   }, [token, activeWindowIndex, wsSessionKey])
 
+  const isComposingRef = useRef(false)
+
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (isComposingRef.current) return // handled by compositionEnd
+    // Fallback for Android (keydown fires key='Unidentified', onChange is reliable there)
     const val = e.target.value
-    if (val) {
-      sendToWs(val)
-      e.target.value = ''
-    }
+    if (val) { sendToWs(val); e.target.value = '' }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (isComposingRef.current) return
     if (e.key === 'Enter') { e.preventDefault(); sendToWs('\r') }
     else if (e.key === 'Backspace') { e.preventDefault(); sendToWs('\x7f') }
+    else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+      // Intercept printable chars (letters, digits, punctuation) directly from keydown.
+      // preventDefault stops the browser from updating input.value, so onChange won't
+      // double-fire. This is reliable on iOS/desktop where e.key is always correct.
+      e.preventDefault()
+      sendToWs(e.key)
+    }
+  }
+
+  function handleCompositionEnd(e: React.CompositionEvent<HTMLInputElement>) {
+    isComposingRef.current = false
+    const text = e.data
+    if (text) sendToWs(text)
+    ;(e.currentTarget as HTMLInputElement).value = ''
   }
 
   // visualViewport: shrink app to visible height when mobile keyboard appears
@@ -1314,6 +1330,8 @@ export default function Terminal({ token }: Props) {
         spellCheck={false}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
+        onCompositionStart={() => { isComposingRef.current = true }}
+        onCompositionEnd={handleCompositionEnd}
         aria-hidden="true"
       />
       <input
