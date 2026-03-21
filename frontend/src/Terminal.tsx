@@ -1026,8 +1026,10 @@ export default function Terminal({ token }: Props) {
           if (xtermTa) { xtermTa.inputMode = 'none'; xtermTa.blur() }
         } else {
           keyboardVisibleRef.current = true
-          if (inputRef.current) { inputRef.current.inputMode = 'text'; inputRef.current.focus() }
-          if (xtermTa) xtermTa.inputMode = 'text'
+          // Focus xterm's own textarea — term.onData handles all input natively
+          // (letters, numbers, IME/CJK) without the quirks of our hidden input.
+          if (xtermTa) { xtermTa.inputMode = 'text'; xtermTa.focus() }
+          if (inputRef.current) inputRef.current.inputMode = 'text'
         }
       }
     }
