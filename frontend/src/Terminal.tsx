@@ -5,6 +5,7 @@ import { WebLinksAddon } from '@xterm/addon-web-links'
 import '@xterm/xterm/css/xterm.css'
 import Toolbar from './Toolbar'
 import SessionFAB from './SessionFAB'
+import GhostShield from './GhostShield'
 import { getWindowStatus, STATUS_DOT_COLOR, STATUS_DOT_TITLE } from './windowStatus'
 
 const SessionManager = lazy(() => import('./SessionManager'))
@@ -460,7 +461,6 @@ export default function Terminal({ token }: Props) {
   const overlayScrolledUpRef = useRef(false)
   const scrollbackOverlayRef = useRef<HTMLDivElement>(null)
   const triggerScrollbackRef = useRef<() => void>(() => {})
-  const drawerOpenTimeRef = useRef(0)
   const pausePollingRef = useRef(false)
   const activeWindowIndexRef = useRef(0)
   const windowsInitializedRef = useRef(false)
@@ -1398,7 +1398,7 @@ export default function Terminal({ token }: Props) {
               <button style={styles.scrollBtn} onClick={scrollToBottom} title="滚到底部">↓</button>
             )}
           </div>
-          <SessionFAB onClick={() => { drawerOpenTimeRef.current = Date.now(); setShowSessionDrawer(true) }} windowCount={windows.length} />
+          <SessionFAB onClick={() => setShowSessionDrawer(true)} windowCount={windows.length} />
           <Toolbar {...toolbarProps} />
         </div>
       )}
@@ -1406,6 +1406,7 @@ export default function Terminal({ token }: Props) {
       {/* 移动端会话抽屉 */}
       {showSessionDrawer && !isWidePC && (
         <>
+          <GhostShield />
           <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.5)' }} onPointerDown={() => { setShowSessionDrawer(false); setDrawerMenuIndex(null); setDrawerRenameIndex(null) }} />
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 401, background: 'var(--nexus-menu-bg)', borderRadius: '12px 12px 0 0', border: '1px solid var(--nexus-border)', borderBottom: 'none', maxHeight: '70vh', display: 'flex', flexDirection: 'column', boxShadow: '0 -4px 24px rgba(0,0,0,0.4)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--nexus-border)', flexShrink: 0 }}>
@@ -1444,7 +1445,7 @@ export default function Terminal({ token }: Props) {
                       ) : (
                         <span
                           style={{ flex: 1, color: 'var(--nexus-text)', fontSize: 14, fontFamily: 'Menlo, Monaco, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
-                          onPointerUp={(e) => { e.stopPropagation(); if (Date.now() - drawerOpenTimeRef.current < 350) return; attachToWindow(win.index); setShowSessionDrawer(false); setDrawerMenuIndex(null) }}
+                          onPointerUp={(e) => { e.stopPropagation(); attachToWindow(win.index); setShowSessionDrawer(false); setDrawerMenuIndex(null) }}
                         >{win.name}</span>
                       )}
                       {isActive && !isRenaming && <span style={{ color: '#3b82f6', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>✓</span>}
@@ -1605,6 +1606,7 @@ export default function Terminal({ token }: Props) {
         const termMuted = (termTheme as any).brightBlack ?? '#4a5568'
         return (
           <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: termBg, display: 'flex', flexDirection: 'column' }}>
+            <GhostShield />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', borderBottom: `1px solid ${termMuted}44`, flexShrink: 0 }}>
               <span style={{ color: termFg, fontWeight: 600, fontSize: termFontSize, fontFamily: termFontFamily }}>历史记录</span>
               <span style={{ color: termMuted, fontSize: termFontSize * 0.75, flex: 1, textAlign: 'center', fontFamily: termFontFamily }}>滚到底部返回终端</span>

@@ -86,6 +86,7 @@ export default function SessionFAB({ onClick, windowCount }: Props) {
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!isDragging.current) return
+    e.preventDefault() // Prevent compatibility mouse/click events after touch
     isDragging.current = false
     if (!moved.current) {
       onClick()

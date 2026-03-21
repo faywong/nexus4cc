@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import GhostShield from './GhostShield'
 
 interface Task {
   id: string
@@ -138,6 +139,7 @@ export default function TaskPanel({ token, windows, activeWindowName, tmuxSessio
 
   return (
     <div style={s.overlay}>
+      <GhostShield />
       <div style={s.panel}>
         {/* Header */}
         <div style={s.header}>

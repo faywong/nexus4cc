@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import GhostShield from './GhostShield'
 
 interface Workspace {
   name: string
@@ -109,6 +110,7 @@ export default function WorkspaceSelector({ token, onClose, onConfirm }: Props) 
 
   return (
     <div style={isDesktop ? s.desktopOverlay : s.overlay}>
+      <GhostShield />
       <div style={isDesktop ? s.desktopPanel : s.panel}>
         {/* 顶部：标题 + 关闭 */}
         <div style={s.header}>
