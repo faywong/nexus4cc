@@ -984,8 +984,8 @@ export default function Terminal({ token }: Props) {
           const y = e.touches[0].clientY
           const deltaY = touchLastY - y  // positive = finger UP = want older content
           touchLastY = y
-          if (deltaY > 0) {
-            swipeUpAccumRef.current += deltaY
+          if (deltaY < 0) {  // finger DOWN = swipe down = view history
+            swipeUpAccumRef.current += -deltaY
             if (swipeUpAccumRef.current > 40) {
               triggerScrollbackRef.current()
             }
@@ -1573,12 +1573,12 @@ export default function Terminal({ token }: Props) {
         </div>
       )}
       {showScrollback && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#0f172a', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid #334155', flexShrink: 0, background: '#1e293b' }}>
-            <span style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 15 }}>历史记录</span>
-            <span style={{ color: '#64748b', fontSize: 11, flex: 1, textAlign: 'center' }}>滚到底部返回终端</span>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'var(--nexus-bg)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', borderBottom: '1px solid var(--nexus-border)', flexShrink: 0, background: 'var(--nexus-menu-bg)' }}>
+            <span style={{ color: 'var(--nexus-text)', fontWeight: 600, fontSize: 15 }}>历史记录</span>
+            <span style={{ color: 'var(--nexus-muted)', fontSize: 11, flex: 1, textAlign: 'center' }}>滚到底部返回终端</span>
             <button
-              style={{ background: 'transparent', border: 'none', color: '#94a3b8', fontSize: 22, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--nexus-text2)', fontSize: 22, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}
               onClick={closeScrollback}
             >×</button>
           </div>
@@ -1588,9 +1588,9 @@ export default function Terminal({ token }: Props) {
             style={{ flex: 1, overflowY: 'auto', padding: '8px 0', WebkitOverflowScrolling: 'touch' } as React.CSSProperties}
           >
             {scrollbackLoading ? (
-              <div style={{ color: '#64748b', textAlign: 'center', padding: 32 }}>加载中...</div>
+              <div style={{ color: 'var(--nexus-muted)', textAlign: 'center', padding: 32 }}>加载中...</div>
             ) : (
-              <pre style={{ margin: 0, padding: '0 12px', fontFamily: 'Menlo, Monaco, "Cascadia Code", monospace', fontSize: 13, color: '#e2e8f0', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.5 }}>
+              <pre style={{ margin: 0, padding: '0 12px', fontFamily: 'Menlo, Monaco, "Cascadia Code", monospace', fontSize: 13, color: 'var(--nexus-text)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.5 }}>
                 {scrollbackContent}
               </pre>
             )}
