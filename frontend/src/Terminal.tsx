@@ -468,6 +468,11 @@ export default function Terminal({ token }: Props) {
   const [showGuide, setShowGuide] = useState(() => localStorage.getItem('nexus_guide_seen') !== 'true')
   const [isScrolledUp, setIsScrolledUp] = useState(false)
   const [keyboardVisible, setKeyboardVisible] = useState(false)
+  const keyboardVisibleRef = useRef(false)
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  const [drawerMenuIndex, setDrawerMenuIndex] = useState<number | null>(null)
+  const [drawerRenameIndex, setDrawerRenameIndex] = useState<number | null>(null)
+  const [drawerRenameValue, setDrawerRenameValue] = useState('')
 
   // F-18: 多 tmux session 支持
   const [tmuxSessions, setTmuxSessions] = useState<string[]>([])
@@ -1011,7 +1016,9 @@ export default function Terminal({ token }: Props) {
         return
       }
       if (Math.abs(dy) < TAP_THRESHOLD && Math.abs(dx) < TAP_THRESHOLD) {
-        inputRef.current?.focus({ preventScroll: true })
+        if (keyboardVisibleRef.current) {
+          inputRef.current?.focus({ preventScroll: true })
+        }
       }
     }
 
@@ -1142,18 +1149,16 @@ export default function Terminal({ token }: Props) {
     else if (e.key === 'Backspace') { e.preventDefault(); sendToWs('\x7f') }
   }
 
-  // visualViewport: re-fit xterm when mobile keyboard appears/disappears
+  // visualViewport: shrink app to visible height when mobile keyboard appears
   useEffect(() => {
     if (isWidePC) return
     const vv = window.visualViewport
     if (!vv) return
     const handleResize = () => {
-      const termEl = containerRef.current
-      if (termEl) {
-        termEl.scrollTop = termEl.scrollHeight
-      }
+      setViewportHeight(vv.height)
       setTimeout(() => fitAddonRef.current?.fit(), 100)
     }
+    handleResize()
     vv.addEventListener('resize', handleResize)
     return () => vv.removeEventListener('resize', handleResize)
   }, [isWidePC])
@@ -1172,19 +1177,21 @@ export default function Terminal({ token }: Props) {
     onUpload: handleFileUpload,
     runningTaskCount,
     onToggleKeyboard: () => {
-      if (keyboardVisible) {
+      if (keyboardVisibleRef.current) {
         inputRef.current?.blur()
+        keyboardVisibleRef.current = false
         setKeyboardVisible(false)
       } else {
-        inputRef.current?.focus()
+        keyboardVisibleRef.current = true
         setKeyboardVisible(true)
+        inputRef.current?.focus()
       }
     },
     keyboardActive: keyboardVisible,
   }
 
   return (
-    <div style={styles.wrapper}>
+    <div style={{ ...styles.wrapper, ...(viewportHeight && !isWidePC ? { height: viewportHeight } : {}) }}>
       {selectionMode && (
         <div
           style={{
@@ -1304,25 +1311,66 @@ export default function Terminal({ token }: Props) {
       {/* 移动端会话抽屉 */}
       {showSessionDrawer && !isWidePC && (
         <>
-          <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.5)' }} onPointerDown={() => setShowSessionDrawer(false)} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 400, background: 'rgba(0,0,0,0.5)' }} onPointerDown={() => { setShowSessionDrawer(false); setDrawerMenuIndex(null); setDrawerRenameIndex(null) }} />
           <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 401, background: 'var(--nexus-menu-bg)', borderRadius: '12px 12px 0 0', border: '1px solid var(--nexus-border)', borderBottom: 'none', maxHeight: '70vh', display: 'flex', flexDirection: 'column', boxShadow: '0 -4px 24px rgba(0,0,0,0.4)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderBottom: '1px solid var(--nexus-border)', flexShrink: 0 }}>
               <span style={{ color: 'var(--nexus-text)', fontWeight: 600, fontSize: 15 }}>会话管理</span>
-              <button style={{ background: 'transparent', border: 'none', color: 'var(--nexus-text2)', fontSize: 22, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }} onPointerDown={() => setShowSessionDrawer(false)}>×</button>
+              <button style={{ background: 'transparent', border: 'none', color: 'var(--nexus-text2)', fontSize: 22, cursor: 'pointer', padding: '0 4px', lineHeight: 1 }} onPointerDown={() => { setShowSessionDrawer(false); setDrawerMenuIndex(null); setDrawerRenameIndex(null) }}>×</button>
             </div>
             <div style={{ flex: 1, overflowY: 'auto', padding: '6px 0' }}>
               {windows.map(win => {
                 const status = getWindowStatus(windowOutputs[win.index])
                 const isActive = win.index === activeWindowIndex
+                const isMenuOpen = drawerMenuIndex === win.index
+                const isRenaming = drawerRenameIndex === win.index
                 return (
-                  <div
-                    key={win.index}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', cursor: 'pointer', background: isActive ? 'var(--nexus-tab-active)' : 'transparent', borderBottom: '1px solid var(--nexus-border)' }}
-                    onClick={() => { attachToWindow(win.index); setShowSessionDrawer(false) }}
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_DOT_COLOR[status], flexShrink: 0, display: 'inline-block' }} title={STATUS_DOT_TITLE[status]} />
-                    <span style={{ flex: 1, color: 'var(--nexus-text)', fontSize: 14, fontFamily: 'Menlo, Monaco, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{win.name}</span>
-                    {isActive && <span style={{ color: '#3b82f6', fontSize: 13, fontWeight: 600 }}>✓</span>}
+                  <div key={win.index} style={{ borderBottom: '1px solid var(--nexus-border)' }}>
+                    {/* Main row */}
+                    <div
+                      style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: isActive ? 'var(--nexus-tab-active)' : 'transparent' }}
+                    >
+                      <span
+                        style={{ width: 8, height: 8, borderRadius: '50%', background: STATUS_DOT_COLOR[status], flexShrink: 0, display: 'inline-block' }}
+                        title={STATUS_DOT_TITLE[status]}
+                      />
+                      {isRenaming ? (
+                        <input
+                          autoFocus
+                          value={drawerRenameValue}
+                          onChange={e => setDrawerRenameValue(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') { renameWindow(win.index, drawerRenameValue.trim() || win.name); setDrawerRenameIndex(null) }
+                            if (e.key === 'Escape') setDrawerRenameIndex(null)
+                          }}
+                          onBlur={() => setDrawerRenameIndex(null)}
+                          style={{ flex: 1, background: 'var(--nexus-bg)', border: '1px solid #3b82f6', borderRadius: 6, color: 'var(--nexus-text)', fontSize: 14, fontFamily: 'Menlo, Monaco, monospace', padding: '4px 8px', outline: 'none' }}
+                          onClick={e => e.stopPropagation()}
+                        />
+                      ) : (
+                        <span
+                          style={{ flex: 1, color: 'var(--nexus-text)', fontSize: 14, fontFamily: 'Menlo, Monaco, monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                          onClick={() => { attachToWindow(win.index); setShowSessionDrawer(false); setDrawerMenuIndex(null) }}
+                        >{win.name}</span>
+                      )}
+                      {isActive && !isRenaming && <span style={{ color: '#3b82f6', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>✓</span>}
+                      <button
+                        style={{ background: 'transparent', border: 'none', color: 'var(--nexus-text2)', fontSize: 18, cursor: 'pointer', padding: '0 4px', flexShrink: 0, lineHeight: 1 }}
+                        onPointerDown={e => { e.stopPropagation(); setDrawerMenuIndex(isMenuOpen ? null : win.index); setDrawerRenameIndex(null) }}
+                      >⋯</button>
+                    </div>
+                    {/* Action row */}
+                    {isMenuOpen && !isRenaming && (
+                      <div style={{ display: 'flex', gap: 8, padding: '6px 16px 10px', background: 'var(--nexus-bg)' }}>
+                        <button
+                          style={{ flex: 1, background: 'transparent', border: '1px solid var(--nexus-border)', borderRadius: 6, color: 'var(--nexus-text)', fontSize: 13, padding: '7px 0', cursor: 'pointer' }}
+                          onPointerDown={e => { e.stopPropagation(); setDrawerRenameValue(win.name); setDrawerRenameIndex(win.index); setDrawerMenuIndex(null) }}
+                        >✎ 改名</button>
+                        <button
+                          style={{ flex: 1, background: 'transparent', border: '1px solid #ef4444', borderRadius: 6, color: '#ef4444', fontSize: 13, padding: '7px 0', cursor: 'pointer' }}
+                          onPointerDown={e => { e.stopPropagation(); closeWindow(win.index); setDrawerMenuIndex(null); if (windows.length <= 1) setShowSessionDrawer(false) }}
+                        >✕ 关闭</button>
+                      </div>
+                    )}
                   </div>
                 )
               })}

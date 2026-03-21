@@ -451,11 +451,6 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
         >
           {selectionMode ? '✓' : '⎘'}
         </button>
-        <button
-          style={keyboardActive ? s.copyBtnActive : s.iconBtn}
-          onPointerDown={(e) => { e.preventDefault(); onToggleKeyboard?.() }}
-          title={keyboardActive ? '隐藏键盘' : '显示键盘'}
-        >⌨</button>
         {/* ⚙ quick menu */}
         <div style={{ position: 'relative' }}>
           <button style={{...s.iconBtn, color: tc.iconColor}} onPointerDown={(e) => { e.preventDefault(); setShowQuickMenu(v => !v) }} title="更多">⚙</button>
@@ -486,6 +481,11 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
             </>
           )}
         </div>
+        <button
+          style={keyboardActive ? s.copyBtnActive : {...s.iconBtn, color: tc.iconColor}}
+          onPointerDown={(e) => { e.preventDefault(); onToggleKeyboard?.() }}
+          title={keyboardActive ? '隐藏键盘' : '显示键盘'}
+        >⌨</button>
       </div>
 
       {renderKeys(config.pinned)}

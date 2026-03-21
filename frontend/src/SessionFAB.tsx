@@ -122,7 +122,9 @@ export default function SessionFAB({ onClick, windowCount }: Props) {
         touchAction: 'none',
       }}
     >
-      <span style={{ fontSize: 22, color: '#fff', lineHeight: 1 }}>&#8801;</span>
+      <svg viewBox="0 0 24 24" fill="white" width="26" height="26">
+        <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+      </svg>
       {!!windowCount && windowCount > 0 && (
         <span style={{
           position: 'absolute',
