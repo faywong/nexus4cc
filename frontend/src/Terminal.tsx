@@ -31,12 +31,12 @@ const TAP_THRESHOLD = 8
 export type ThemeMode = 'dark' | 'light'
 
 const DARK_THEME: ITheme = {
-  background: '#1a1a2e',
+  background: '#0f172a',
   foreground: '#e2e8f0',
-  cursor: '#e2e8f0',
-  cursorAccent: '#1a1a2e',
-  selectionBackground: '#264f78',
-  selectionForeground: '#e2e8f0',
+  cursor: '#94a3b8',
+  cursorAccent: '#0f172a',
+  selectionBackground: '#3b82f660',
+  selectionForeground: '#f1f5f9',
   black: '#1a1a2e',
   brightBlack: '#4a5568',
   red: '#fc8181',
@@ -56,12 +56,12 @@ const DARK_THEME: ITheme = {
 }
 
 const LIGHT_THEME: ITheme = {
-  background: '#ffffff',
-  foreground: '#333333',
-  cursor: '#333333',
-  cursorAccent: '#ffffff',
-  selectionBackground: '#add6ff',
-  selectionForeground: '#333333',
+  background: '#f8fafc',
+  foreground: '#1e293b',
+  cursor: '#475569',
+  cursorAccent: '#f8fafc',
+  selectionBackground: '#bfdbfe',
+  selectionForeground: '#1e293b',
   black: '#000000',
   brightBlack: '#666666',
   red: '#cd3131',
@@ -91,23 +91,23 @@ export function getInitialTheme(): ThemeMode {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
-// 极简主题系统 — 统一的深浅色配色
-function initCssVars(mode: ThemeMode) {
+// 主题色板 — 统一 Tailwind slate 色阶
+function applyNexusCssVars(mode: ThemeMode) {
   const isDark = mode === 'dark'
   const root = document.documentElement
-  root.style.setProperty('--nexus-bg',        isDark ? '#0f172a' : '#ffffff')  // 主背景
-  root.style.setProperty('--nexus-bg2',       isDark ? '#1e293b' : '#f1f5f9')  // 次级背景
-  root.style.setProperty('--nexus-menu-bg',   isDark ? '#1e293b' : '#ffffff')  // 面板/菜单
-  root.style.setProperty('--nexus-border',    isDark ? '#334155' : '#e2e8f0')  // 边框
-  root.style.setProperty('--nexus-text',      isDark ? '#f8fafc' : '#0f172a')  // 主要文字
-  root.style.setProperty('--nexus-text2',     isDark ? '#94a3b8' : '#64748b')  // 次要文字
-  root.style.setProperty('--nexus-muted',     isDark ? '#64748b' : '#94a3b8')  // 禁用/提示
-  root.style.setProperty('--nexus-tab-active',isDark ? '#334155' : '#e2e8f0')  // 激活标签
-  root.style.setProperty('--nexus-accent',    '#3b82f6')                       // 强调蓝
-  root.style.setProperty('--nexus-success',   '#22c55e')                       // 成功绿
-  root.style.setProperty('--nexus-error',     '#ef4444')                       // 错误红
+  root.style.setProperty('--nexus-bg',         isDark ? '#0f172a' : '#f8fafc')  // slate-900 / slate-50
+  root.style.setProperty('--nexus-bg2',        isDark ? '#1e293b' : '#f1f5f9')  // slate-800 / slate-100
+  root.style.setProperty('--nexus-menu-bg',    isDark ? '#1e293b' : '#ffffff')   // 面板/弹层背景
+  root.style.setProperty('--nexus-border',     isDark ? '#334155' : '#e2e8f0')  // slate-700 / slate-200
+  root.style.setProperty('--nexus-text',       isDark ? '#f1f5f9' : '#0f172a')  // slate-100 / slate-900
+  root.style.setProperty('--nexus-text2',      isDark ? '#94a3b8' : '#64748b')  // slate-400 / slate-500
+  root.style.setProperty('--nexus-muted',      isDark ? '#475569' : '#94a3b8')  // slate-600 / slate-400
+  root.style.setProperty('--nexus-tab-active', isDark ? '#1e293b' : '#e2e8f0')  // 选中标签高亮
+  root.style.setProperty('--nexus-accent',     '#3b82f6')                        // blue-500
+  root.style.setProperty('--nexus-success',    '#22c55e')                        // green-500
+  root.style.setProperty('--nexus-error',      '#ef4444')                        // red-500
 }
-initCssVars(getInitialTheme())
+applyNexusCssVars(getInitialTheme())
 
 // Agent 状态推断（F-15）
 // 复制模式覆盖层组件
@@ -473,19 +473,9 @@ export default function Terminal({ token }: Props) {
     return () => mq.removeEventListener('change', handler)
   }, [])
 
-  // CSS vars 独立于 xterm，组件 mount 即执行
+  // CSS vars 统一调用模块级函数，保证一致性
   const applyCssVars = useCallback((mode: ThemeMode) => {
-    const isDark = mode === 'dark'
-    const root = document.documentElement
-    root.style.setProperty('--nexus-bg', isDark ? '#16213e' : '#f1f5f9')
-    root.style.setProperty('--nexus-bg2', isDark ? '#0f3460' : '#dbeafe')
-    root.style.setProperty('--nexus-border', isDark ? '#334155' : '#cbd5e1')
-    root.style.setProperty('--nexus-text', isDark ? '#e2e8f0' : '#1e293b')
-    root.style.setProperty('--nexus-text2', isDark ? '#94a3b8' : '#475569')
-    root.style.setProperty('--nexus-muted', isDark ? '#64748b' : '#94a3b8')
-    root.style.setProperty('--nexus-tab-active', isDark ? '#0f3460' : '#dbeafe')
-    root.style.setProperty('--nexus-sheet-bg', isDark ? '#16213e' : '#f8fafc')
-    root.style.setProperty('--nexus-menu-bg', isDark ? '#1e293b' : '#ffffff')
+    applyNexusCssVars(mode)
   }, [])
 
   const applyTheme = useCallback((mode: ThemeMode) => {
