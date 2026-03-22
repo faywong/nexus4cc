@@ -409,7 +409,7 @@ export default function Terminal({ token }: Props) {
   const toolbarWrapRef = useRef<HTMLDivElement>(null)
   const [toolbarHeight, setToolbarHeight] = useState(0)
   const keyboardVisibleRef = useRef(false)
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null)
+  // Viewport height is handled by CSS 100dvh, not JS
   const [drawerMenuIndex, setDrawerMenuIndex] = useState<number | null>(null)
   const [drawerRenameIndex, setDrawerRenameIndex] = useState<number | null>(null)
   const [drawerRenameValue, setDrawerRenameValue] = useState('')
@@ -1142,14 +1142,13 @@ export default function Terminal({ token }: Props) {
     ;(e.currentTarget as HTMLInputElement).value = ''
   }
 
-  // visualViewport: shrink app to visible height when mobile keyboard appears
+  // Track keyboard visibility for input handling (not for layout height)
   useEffect(() => {
     if (isWidePC) return
     const vv = window.visualViewport
     if (!vv) return
     const handleResize = () => {
-      setViewportHeight(vv.height)
-      setTimeout(() => fitAddonRef.current?.fit(), 100)
+      keyboardVisibleRef.current = vv.height < window.innerHeight * 0.8
     }
     handleResize()
     vv.addEventListener('resize', handleResize)
@@ -1261,7 +1260,7 @@ export default function Terminal({ token }: Props) {
   }
 
   return (
-    <div style={{ ...styles.wrapper, ...(viewportHeight && !isWidePC ? { height: viewportHeight } : {}) }}>
+    <div style={styles.wrapper}>
       <input
         ref={inputRef}
         style={styles.hiddenInput}
@@ -1580,7 +1579,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     width: '100%',
-    height: '100%',
+    height: '100dvh',
     position: 'relative',
   },
   terminal: {
