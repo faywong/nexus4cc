@@ -18,6 +18,7 @@ interface Props {
   onOpenSessions?: () => void
   onOpenTasks?: () => void
   onUpload?: () => void
+  onUploadFile?: (file: File) => void
   runningTaskCount?: number
 }
 
@@ -61,7 +62,7 @@ interface DragState {
 
 const ITEM_HEIGHT = 48 // px，每行编辑项高度
 
-export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _termRef, themeMode, onToggleTheme, onOpenSettings, onOpenTasks, onUpload, runningTaskCount }: Props) {
+export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _termRef, themeMode, onToggleTheme, onOpenSettings, onOpenTasks, onUploadFile, runningTaskCount }: Props) {
   const [config, setConfig]           = useState<ToolbarConfig>(loadConfig)
   const [collapsed, setCollapsed]     = useState(() => {
     const saved = localStorage.getItem(COLLAPSED_KEY)
@@ -70,6 +71,9 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
     return window.innerWidth >= 1024
   })
   const [editing, setEditing]         = useState(false)
+  const [showPasteBox, setShowPasteBox] = useState(false)
+  const pasteBoxRef   = useRef<HTMLTextAreaElement>(null)
+  const pasteFileRef  = useRef<HTMLInputElement>(null)
   const [drag, setDrag]               = useState<DragState | null>(null)
   const [savedFlash, setSavedFlash]   = useState(false)
   const [showQuickMenu, setShowQuickMenu] = useState(false)
@@ -144,6 +148,10 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
     }
   }, [drag])
 
+  useEffect(() => {
+    if (showPasteBox) setTimeout(() => pasteBoxRef.current?.focus(), 50)
+  }, [showPasteBox])
+
   function saveConfig(c: ToolbarConfig) {
     localStorage.setItem(CONFIG_KEY, JSON.stringify(c))
     fetch('/api/toolbar-config', {
@@ -159,12 +167,29 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
     if (key.action === 'scrollToBottom') {
       scrollToBottom()
     } else if (key.action === 'pasteClipboard') {
-      try {
-        const text = await navigator.clipboard.readText()
-        if (text) sendToWs(text)
-      } catch {
-        // clipboard access denied or unavailable
+      // Try clipboard API silently (HTTPS only); fall back to the paste sheet
+      if (navigator.clipboard) {
+        let handled = false
+        try {
+          const items = await navigator.clipboard.read()
+          for (const item of items) {
+            const imgType = item.types.find(t => t.startsWith('image/'))
+            if (imgType && onUploadFile) {
+              const blob = await item.getType(imgType)
+              onUploadFile(new File([blob], `paste.${imgType.split('/')[1] ?? 'png'}`, { type: imgType }))
+              handled = true; break
+            }
+          }
+        } catch {}
+        if (!handled) {
+          try {
+            const text = await navigator.clipboard.readText()
+            if (text) { sendToWs(text); handled = true }
+          } catch {}
+        }
+        if (handled) return
       }
+      setShowPasteBox(true)
     } else if (key.action === 'copyTerminal') {
       try {
         const term = _termRef.current
@@ -374,6 +399,71 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
     )
   }
 
+  // ---- 统一粘贴 / 上传面板 ----
+  const pasteBoxEl = showPasteBox && createPortal(
+    <>
+      <div style={{ position: 'fixed', inset: 0, zIndex: 700 }} onPointerDown={() => setShowPasteBox(false)} />
+      <div style={{
+        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 701,
+        background: 'var(--nexus-bg)', borderTop: '1px solid var(--nexus-border)',
+        borderRadius: '12px 12px 0 0', padding: '14px 16px 24px',
+        boxShadow: '0 -4px 24px rgba(0,0,0,0.35)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <span style={{ color: 'var(--nexus-text)', fontSize: 14, fontWeight: 600 }}>粘贴 / 上传</span>
+          <button onPointerDown={(e) => { e.preventDefault(); setShowPasteBox(false) }}
+            style={{ background: 'transparent', border: 'none', color: 'var(--nexus-text2)', cursor: 'pointer', padding: 4, display: 'flex' }}>
+            <Icon name="x" size={20} />
+          </button>
+        </div>
+        <textarea
+          ref={pasteBoxRef}
+          rows={3}
+          placeholder="长按此处粘贴文本或图片…"
+          style={{
+            width: '100%', boxSizing: 'border-box', background: 'var(--nexus-bg2)',
+            border: '1px solid var(--nexus-border)', borderRadius: 8,
+            color: 'var(--nexus-text)', fontSize: 14, padding: '10px', resize: 'none',
+            outline: 'none', fontFamily: 'inherit', display: 'block',
+          }}
+          onPaste={(e) => {
+            const items = e.clipboardData?.items
+            if (items) {
+              for (let i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/') && onUploadFile) {
+                  e.preventDefault()
+                  const file = items[i].getAsFile()
+                  if (file) { onUploadFile(file); setShowPasteBox(false) }
+                  return
+                }
+              }
+            }
+            setTimeout(() => {
+              const text = pasteBoxRef.current?.value ?? ''
+              if (text) { sendToWs(text); setShowPasteBox(false) }
+            }, 0)
+          }}
+        />
+        <label style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          marginTop: 10, padding: '10px', borderRadius: 8, cursor: 'pointer',
+          background: 'var(--nexus-bg2)', border: '1px solid var(--nexus-border)',
+          color: 'var(--nexus-text2)', fontSize: 13,
+        }}>
+          <Icon name="paperclip" size={16} />选择文件
+          <input ref={pasteFileRef} type="file" accept="*/*" style={{ display: 'none' }}
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file && onUploadFile) { onUploadFile(file); setShowPasteBox(false) }
+              e.target.value = ''
+            }}
+          />
+        </label>
+      </div>
+    </>,
+    document.body
+  )
+
   // ---- 正常工具栏 ----
   if (isPC) {
     return (
@@ -433,6 +523,7 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
             ))}
           </div>
         )}
+        {pasteBoxEl}
       </div>
     )
   }
@@ -477,11 +568,9 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
                     {!!runningTaskCount && <span style={{ marginLeft: 'auto', background: 'var(--nexus-success)', color: '#fff', borderRadius: 8, padding: '1px 6px', fontSize: 11 }}>{runningTaskCount}</span>}
                   </button>
                 )}
-                {onUpload && (
-                  <button style={s.quickMenuItem} onPointerDown={(e) => { e.preventDefault(); onUpload(); setShowQuickMenu(false) }}>
-                    <Icon name="paperclip" size={16} /><span>上传文件</span>
-                  </button>
-                )}
+                <button style={s.quickMenuItem} onPointerDown={(e) => { e.preventDefault(); setShowPasteBox(true); setShowQuickMenu(false) }}>
+                  <Icon name="paperclip" size={16} /><span>粘贴 / 上传</span>
+                </button>
               </div>
             </>,
             document.body
@@ -512,6 +601,7 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
           ))}
         </div>
       )}
+      {pasteBoxEl}
     </div>
   )
 }

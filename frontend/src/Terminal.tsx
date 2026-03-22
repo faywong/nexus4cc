@@ -1254,6 +1254,7 @@ export default function Terminal({ token }: Props) {
     onOpenSettings: () => setShowSettings(true),
     onOpenTasks: () => setShowTasks(true),
     onUpload: handleFileUpload,
+    onUploadFile: uploadFile,
     runningTaskCount,
   }
 
