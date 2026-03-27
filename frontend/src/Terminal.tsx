@@ -680,6 +680,7 @@ export default function Terminal({ token }: Props) {
   const windowsLoadedRef = useRef(false)
   const [windowsLoaded, setWindowsLoaded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const pasteFileRef = useRef<HTMLInputElement>(null)
   const uploadFileRef = useRef<(file: File) => Promise<void>>(null!)
   const [windowOutputs, setWindowOutputs] = useState<Record<number, { output: string; clients: number; idleMs: number; connected: boolean }>>({})
   const [runningTaskCount, setRunningTaskCount] = useState(0)
@@ -1753,6 +1754,18 @@ export default function Terminal({ token }: Props) {
       <input
         ref={fileInputRef}
         type="file"
+        accept="image/*,video/*"
+        style={styles.hiddenInput}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) uploadFile(file)
+          e.target.value = '' // reset
+        }}
+        aria-hidden="true"
+      />
+      <input
+        ref={pasteFileRef}
+        type="file"
         style={styles.hiddenInput}
         onChange={(e) => {
           const file = e.target.files?.[0]
@@ -2102,14 +2115,16 @@ export default function Terminal({ token }: Props) {
             <div
               key={notification.id}
               style={{
-                background: 'var(--nexus-menu-bg)',
-                border: '1px solid var(--nexus-border)',
+                background: 'color-mix(in srgb, var(--nexus-bg2) 85%, transparent)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid color-mix(in srgb, var(--nexus-border) 50%, transparent)',
                 borderRadius: 8,
                 padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
-                boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.25)',
                 animation: 'slideUp 0.2s ease-out',
               }}
             >
