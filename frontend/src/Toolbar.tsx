@@ -730,6 +730,12 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
                     <span>{t('toolbar.fileList')}</span>
                   </button>
                 )}
+                {onOpenSettings && (
+                  <button className={quickMenuItemClass} onPointerDown={(e) => { e.preventDefault(); onOpenSettings(); setShowQuickMenu(false) }}>
+                    <Icon name="settings" size={16} />
+                    <span>{t('toolbar.settings')}</span>
+                  </button>
+                )}
               </div>
             </>,
             document.body
