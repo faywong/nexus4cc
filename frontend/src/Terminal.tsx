@@ -1371,7 +1371,8 @@ export default function Terminal({ token }: Props) {
           <div className="flex flex-1 overflow-hidden min-h-0">
             {/* Collapsible Sidebar */}
             <div
-              style={{ width: sidebarCollapsed ? 48 : 220, overflow: 'clip' }}
+              className="flex-shrink-0 flex flex-col"
+              style={{ width: sidebarCollapsed ? 48 : 220, overflow: 'hidden' }}
               onClick={() => {
                 setSidebarCollapsed(!sidebarCollapsed)
                 localStorage.setItem('nexus_sidebar_collapsed', String(!sidebarCollapsed))
@@ -1380,12 +1381,12 @@ export default function Terminal({ token }: Props) {
               {sidebarCollapsed ? (
                 /* Collapsed Sidebar - Icon Only */
                 <div
-                    className="flex-1 overflow-hidden flex flex-col"
-                  style={{ overflow: 'clip' }}
+                  className="flex-1 flex flex-col min-h-0 overflow-hidden bg-nexus-bg"
+                  style={{ maxWidth: 48 }}
                 >
                   {/* Scrollable window indicators */}
                   <div
-                    className="flex-1 overflow-y-auto py-2 flex flex-col gap-0.5"
+                    className="flex-1 overflow-y-auto overflow-x-hidden py-2 flex flex-col gap-0.5"
                   >
                     {windows.map(win => {
                       const status = getWindowStatus(windowOutputs[win.index])
@@ -1480,17 +1481,19 @@ export default function Terminal({ token }: Props) {
                   </div>
                 </div>
               ) : (
-                /* Expanded Sidebar: scrollable content + fixed bottom bar */
+                /* Expanded Sidebar: session manager + fixed bottom bar */
                 <div
                   className="flex-1 flex flex-col min-h-0 overflow-hidden"
-                  onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                      setSidebarCollapsed(true)
-                      localStorage.setItem('nexus_sidebar_collapsed', 'true')
-                    }
-                  }}
                 >
-                  <div onClick={(e) => e.stopPropagation()}>
+                  <div
+                    className="flex-1 min-h-0 overflow-hidden"
+                    onClick={(e) => {
+                      if (e.target === e.currentTarget) {
+                        setSidebarCollapsed(true)
+                        localStorage.setItem('nexus_sidebar_collapsed', 'true')
+                      }
+                    }}
+                  >
                     <SessionManagerV2
                       ref={sessionManagerRef}
                       token={token}

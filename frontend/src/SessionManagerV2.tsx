@@ -537,10 +537,12 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
 
   // ====== Sidebar mode ======
   if (isSidebar) {
-    const projectMaxH = sidebarHeight ? Math.floor(sidebarHeight * 0.32) : 180
-    const channelFixedH = sidebarHeight ? Math.floor(sidebarHeight * 0.48) : 250
+    const halfH = Math.floor(sidebarHeight / 2)
     return (
-      <div className="h-full flex flex-col bg-nexus-bg text-nexus-text" style={{ maxHeight: sidebarHeight ?? undefined }}>
+      <div
+        className="h-full flex flex-col bg-nexus-bg text-nexus-text"
+        style={{ height: sidebarHeight ?? undefined }}
+      >
         {error && (
           <div className="bg-red-500/15 text-nexus-error px-4 py-2.5 text-sm flex items-center justify-between border-b border-nexus-border shrink-0">
             {error}
@@ -550,8 +552,8 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
           </div>
         )}
 
-        {/* Projects section: fixed max-height, internal scroll */}
-        <div className="flex-shrink-0 flex flex-col" style={{ maxHeight: projectMaxH, overflow: 'hidden' }}>
+        {/* Projects section: 50% height, internal scroll */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ flex: '1 1 50%' }}>
           <div className="px-3 py-1.5 border-b border-nexus-border shrink-0">
             <div className="text-xs font-semibold text-nexus-text tracking-wide flex items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5">
@@ -568,8 +570,7 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
             </div>
           </div>
           <div
-            className="overflow-y-auto px-1.5 py-1"
-            style={{ maxHeight: projectMaxH - 36, minHeight: 40 }}
+            className="flex-1 overflow-y-auto px-1.5 py-1"
             onClick={(e) => { if (onBackgroundClick && e.target === e.currentTarget) onBackgroundClick() }}
           >
             {loadingProjects ? (
@@ -592,7 +593,7 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-nexus-text truncate leading-tight" title={project.name}>{project.name}</div>
                     {project.path && (
-                      <div className="text-[11px] text-nexus-bg-2 font-mono truncate mt-0.5" title={project.path}>
+                      <div className="text-[11px] text-nexus-text-2 font-mono truncate mt-0.5" title={project.path}>
                         {formatPath(project.path)}
                       </div>
                     )}
@@ -602,17 +603,17 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
               )
             })}
           </div>
-          <button className="flex items-center justify-center gap-1.5 mx-3 my-1 px-2 py-1 bg-transparent border border-dashed border-nexus-border rounded text-nexus-text-2 text-sm cursor-pointer shrink-0 mt-auto" onPointerDown={onNewProject}>
+          <button className="flex items-center justify-center gap-1.5 mx-3 py-1 px-2.5 bg-transparent border border-dashed border-nexus-border rounded text-nexus-text-2 text-sm cursor-pointer shrink-0" onPointerDown={onNewProject}>
             <Icon name="plus" size={14} />
             <span>{t('sessionMgr.newProject')}</span>
           </button>
         </div>
 
         {/* Divider */}
-        <div className="flex-shrink-0 h-px bg-nexus-border my-1" />
+        <div className="flex-shrink-0 h-px bg-nexus-border" />
 
-        {/* Channels section: fixed height, internal scroll */}
-        <div className="flex-shrink-0 flex flex-col" style={{ height: channelFixedH, overflow: 'hidden' }}>
+        {/* Channels section: 50% height, internal scroll */}
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden" style={{ flex: '1 1 50%' }}>
           <div className="px-3 py-1.5 border-b border-nexus-border shrink-0">
             <div className="text-xs font-semibold text-nexus-text tracking-wide flex items-center gap-1.5">
               <span className="text-sm">#</span>
@@ -620,8 +621,7 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
             </div>
           </div>
           <div
-            className="overflow-y-auto px-1.5 py-1"
-            style={{ height: channelFixedH - 44, overflowY: 'auto' }}
+            className="flex-1 overflow-y-auto px-1.5 py-1"
             onClick={(e) => { if (onBackgroundClick && e.target === e.currentTarget) onBackgroundClick() }}
           >
             {loadingChannels ? (
@@ -649,11 +649,7 @@ export default forwardRef<SessionManagerV2Handle, Props>(function SessionManager
               )
             })}
           </div>
-        </div>
-
-        {/* Fixed action button at bottom */}
-        <div className="shrink-0 border-t border-nexus-border" onClick={(e) => e.stopPropagation()}>
-          <button className="flex items-center justify-center gap-1.5 mx-3 my-1.5 px-2.5 py-1.5 bg-transparent border border-dashed border-nexus-border rounded text-nexus-text-2 text-sm cursor-pointer" onPointerDown={onNewChannel}>
+          <button className="flex items-center justify-center gap-1.5 mx-3 py-1 px-2.5 bg-transparent border border-dashed border-nexus-border rounded text-nexus-text-2 text-sm cursor-pointer shrink-0" onPointerDown={onNewChannel}>
             <Icon name="plus" size={14} />
             <span>{t('sessionMgr.newChannel')}</span>
           </button>
