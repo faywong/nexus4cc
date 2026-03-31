@@ -208,7 +208,7 @@
     "upload": "Upload",
     "tasks": "Tasks",
     "settings": "Settings",
-    "lastOutput": "Last output ({{window}})",
+    "lastOutput": "Last output ({{channel}})",
     "online": "● Online",
     "closeSession": "Close session"
   }

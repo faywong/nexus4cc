@@ -208,7 +208,7 @@
     "upload": "上传文件",
     "tasks": "任务面板",
     "settings": "设置",
-    "lastOutput": "最后输出 ({{window}})",
+    "lastOutput": "最后输出 ({{channel}})",
     "online": "● 在线",
     "closeSession": "关闭会话"
   }
