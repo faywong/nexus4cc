@@ -1,6 +1,6 @@
-# PRD — Nexus AI 终端面板
+# PRD — Nexus AI 终端面板 **(v1 Complete / 已完成)**
 
-**版本**: v1.2.0  **状态**: Active  **锚点**: `docs/NORTH-STAR.md`
+**版本**: v1.0.0  **状态**: Complete  **锚点**: `docs/NORTH-STAR.md`  **完成日期**: 2026-04-01
 
 ---
 
@@ -21,7 +21,7 @@
 
 ## Core Features
 
-### Must（v1 已实现）
+### Must（v1 Complete）
 
 | ID | Feature | 验收标准 |
 |---|---|---|
@@ -35,7 +35,7 @@
 | F-08 | PWA 支持 | manifest.json + Service Worker，可添加主屏幕 |
 | F-12 | claude -c 会话续接 | 自动检测 `.claude-data/.claude`，`claude -c` 续接历史会话 |
 
-### Should（v2：极致 Agent 管理体验）
+### Should（v1 Complete）
 
 > 对应北极星「轴三：极致 Agent 管理体验」
 
@@ -46,7 +46,7 @@
 | F-11 | 独立 window PTY | `ensurePty(windowId)` Map；`/ws?window=N` 多设备不互扰 |
 | F-15 | Agent 状态卡片 | 每个 window 显示最后输出摘要（是否在跑/是否等待输入） |
 
-### Could（v3：零摩擦上下文同步）
+### Could（v1 Complete）
 
 > 对应北极星「轴二：零摩擦上下文同步」——不限于浏览器终端的交互渠道
 

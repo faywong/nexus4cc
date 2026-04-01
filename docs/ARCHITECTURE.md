@@ -1,6 +1,6 @@
 # ARCHITECTURE — Nexus 架构现状
 
-**扫描日期**: 2026-03-20  **版本**: v1.7.0  **锚点**: `docs/NORTH-STAR.md`
+**Last Updated**: 2026-04-01  **版本**: v1.0.0  **锚点**: `docs/NORTH-STAR.md`
 
 ---
 
@@ -172,7 +172,11 @@ data/
     └── profile-b.json
 ```
 
-**特点**: 无数据库，JSON 文件持久化。tmux 会话状态从 tmux 实时读取。
+**特点**: No database — JSON files + live tmux state.
+
+**Polling**:
+- Terminal: `/api/sessions/:id/output?session=` (3s) → windowOutputs (shared to TabBar/Sidebar)
+- Tasks: `/api/tasks` (5s) → badges/title/notifications
 
 ---
 

@@ -1,24 +1,25 @@
 # ROADMAP — Nexus
 
-**锚点**: `docs/NORTH-STAR.md` | **PRD**: `docs/PRD.md`
+**锚点**: `docs/NORTH-STAR.md` | **PRD**: `docs/PRD.md` (v1 Complete) | **更新**: 2026-04-01
 
 ---
 
-## Current Sprint（进行中）
+## v1.0 Released (2026-04-01)
 
-> 所有核心功能已完成，当前为持续迭代优化阶段。
+All F-01 to F-18 complete.
 
----
-
-## Backlog（待开发）
-
-| Feature | 说明 |
-|---|---|
-| 历史记录 ANSI 颜色渲染 | server 加 `-e` flag 保留转义码；client 用 `ansi-to-html` 转 HTML，配色读 `term.options.theme` 色板 |
+## v2.0 Backlog
 
 ---
 
-## 已完成
+| ANSI output in task history | Add `-e` flag; frontend ansi-to-html |
+| F-19 Project-Window hierarchy | tmux env NEXUS_CWD per-session |
+| F-20 Unified session manager | Slack-style Project/Channel UI |
+| Open-source polish | Git history rewrite, rate limits, etc. |
+
+---
+
+## v1 Complete (F-01 to F-18)
 
 | Feature | Commit |
 |---|---|
