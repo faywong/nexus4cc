@@ -30,7 +30,7 @@ function formatTime(ts: number): string {
 
 export default function WorkspaceBrowser({ token, onClose, initialPath = '', currentSession }: Props) {
   const { t } = useTranslation()
-  const [path, setPath] = useState(initialPath)
+  const [currentPath, setCurrentPath] = useState(initialPath)
   const [entries, setEntries] = useState<DirEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -39,18 +39,19 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
     setLoading(true)
     setError('')
     try {
-      const r = await fetch(`/api/workspace/files?path=${encodeURIComponent(path)}`, {
+      const r = await fetch(`/api/workspace/files?path=${encodeURIComponent(currentPath)}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!r.ok) throw new Error(await r.text())
       const data = await r.json()
+      if (data.path) setCurrentPath(data.path)
       setEntries(data.entries || [])
     } catch (e: any) {
       setError(e.message || 'Failed to load')
     } finally {
       setLoading(false)
     }
-  }, [token, path])
+  }, [token, currentPath])
 
   // Effect 1: 获取当前 session 的 CWD 作为初始路径
   useEffect(() => {
@@ -60,40 +61,40 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data?.relative !== undefined) {
-          setPath(data.relative)
+        if (data?.cwd) {
+          setCurrentPath(data.cwd)
         }
       })
       .catch(() => {})
   }, [currentSession, token])
 
-  // Effect 2: 当 path 变化时获取目录内容
+  // Effect 2: 当 currentPath 变化时获取目录内容
   useEffect(() => {
     fetchEntries()
-  }, [path, fetchEntries])
+  }, [currentPath, fetchEntries])
 
   function navigateTo(name: string) {
-    const newPath = path ? `${path}/${name}` : name
-    setPath(newPath)
+    const newPath = currentPath.endsWith('/') ? `${currentPath}${name}` : `${currentPath}/${name}`
+    setCurrentPath(newPath)
   }
 
   function navigateUp() {
-    if (!path) return
-    const idx = path.lastIndexOf('/')
-    if (idx === -1) {
-      setPath('')
-    } else {
-      setPath(path.slice(0, idx))
-    }
+    if (!currentPath || currentPath === '/') return
+    const parent = currentPath.split('/').slice(0, -1).join('/') || '/'
+    setCurrentPath(parent)
+  }
+
+  function navigateToRoot() {
+    setCurrentPath('/')
   }
 
   function openFile(name: string) {
-    const filePath = path ? `/workspace/${path}/${name}` : `/workspace/${name}`
+    const filePath = currentPath.endsWith('/') ? `${currentPath}${name}` : `${currentPath}/${name}`
     window.open(filePath, '_blank')
   }
 
   // 构建面包屑路径
-  const breadcrumbs = path ? path.split('/') : []
+  const breadcrumbs = currentPath === '/' ? [] : currentPath.split('/').filter(Boolean)
 
   return (
     <div className="fixed inset-0 z-[450] bg-nexus-bg flex flex-col">
@@ -116,16 +117,16 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 px-4 py-2 border-b border-nexus-border bg-nexus-bg-2 flex-shrink-0 overflow-x-auto">
         <button
-          onClick={() => setPath('')}
-          className={`text-sm whitespace-nowrap ${path === '' ? 'text-nexus-accent font-medium' : 'text-nexus-text-2 hover:text-nexus-text'}`}
+          onClick={navigateToRoot}
+          className={`text-sm whitespace-nowrap ${currentPath === '/' ? 'text-nexus-accent font-medium' : 'text-nexus-text-2 hover:text-nexus-text'}`}
         >
-          {t('workspace.root')}
+          /
         </button>
         {breadcrumbs.map((crumb, idx) => (
           <span key={idx} className="flex items-center gap-1">
             <span className="text-nexus-muted">/</span>
             <button
-              onClick={() => setPath(breadcrumbs.slice(0, idx + 1).join('/'))}
+              onClick={() => setCurrentPath('/' + breadcrumbs.slice(0, idx + 1).join('/'))}
               className={`text-sm whitespace-nowrap ${idx === breadcrumbs.length - 1 ? 'text-nexus-accent font-medium' : 'text-nexus-text-2 hover:text-nexus-text'}`}
             >
               {crumb}
@@ -153,7 +154,7 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
         ) : (
           <div className="divide-y divide-nexus-border">
             {/* 上级目录 */}
-            {path && (
+            {currentPath !== '/' && (
               <button
                 onClick={navigateUp}
                 className="w-full flex items-center gap-3 px-4 py-3 hover:bg-nexus-bg-2 transition-colors text-left"

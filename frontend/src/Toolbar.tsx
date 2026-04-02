@@ -545,13 +545,6 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
                 className={iconBtnPCClass}
                 onPointerDown={(e) => { e.preventDefault(); onOpenWorkspace() }}
                 title={t('toolbar.workspace')}
-              ><Icon name="folderOpen" size={18} /></button>
-            )}
-            {onOpenFiles && (
-              <button
-                className={iconBtnPCClass}
-                onPointerDown={(e) => { e.preventDefault(); onOpenFiles() }}
-                title={t('toolbar.fileList')}
               ><Icon name="folder" size={18} /></button>
             )}
             <button
@@ -560,13 +553,22 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
               title={t('toolbar.pasteUpload')}
             ><Icon name="paperclip" size={18} /></button>
           </div>
-          {onOpenSettings && (
-            <button
-              className={iconBtnPCClass}
-              onPointerDown={(e) => { e.preventDefault(); onOpenSettings() }}
-              title={t('toolbar.settings')}
-            ><Icon name="settings" size={18} /></button>
-          )}
+          <div className="flex items-center gap-0.5">
+            {onOpenFiles && (
+              <button
+                className={iconBtnPCClass}
+                onPointerDown={(e) => { e.preventDefault(); onOpenFiles() }}
+                title={t('toolbar.fileList')}
+              ><Icon name="image" size={18} /></button>
+            )}
+            {onOpenSettings && (
+              <button
+                className={iconBtnPCClass}
+                onPointerDown={(e) => { e.preventDefault(); onOpenSettings() }}
+                title={t('toolbar.settings')}
+              ><Icon name="settings" size={18} /></button>
+            )}
+          </div>
         </div>
         {fileInputsEl}
         {pasteBoxEl}
@@ -602,12 +604,11 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
             })}
           </div>
           {/* 右侧按钮组 */}
-          {onOpenFiles && (
-            <button className={iconBtnPCClass} onPointerDown={(e) => { e.preventDefault(); onOpenFiles() }} title={t('toolbar.fileList')}>
+          {onOpenWorkspace && (
+            <button className={iconBtnPCClass} onPointerDown={(e) => { e.preventDefault(); onOpenWorkspace() }} title={t('toolbar.workspace')}>
               <Icon name="folder" size={18} />
             </button>
           )}
-          {/* 上传按钮 */}
           <button
             ref={uploadBtnRef}
             className={`${iconBtnPCClass} relative`}
@@ -684,6 +685,15 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
       <div className="flex items-center py-[3px] px-1.5 gap-1">
         <div className="flex-1" />
         {/* 上传按钮 - 显示自定义面板 */}
+        {onOpenWorkspace && (
+          <button
+            className={iconBtnClass}
+            onPointerDown={(e) => { e.preventDefault(); onOpenWorkspace() }}
+            title={t('toolbar.workspace')}
+          >
+            <Icon name="folder" size={18} />
+          </button>
+        )}
         <button
           className={iconBtnClass}
           onPointerDown={(e) => {
@@ -744,14 +754,8 @@ export default function Toolbar({ token, sendToWs, scrollToBottom, termRef: _ter
                 </button>
                 {onOpenFiles && (
                   <button className={quickMenuItemClass} onPointerDown={(e) => { e.preventDefault(); onOpenFiles(); setShowQuickMenu(false) }}>
-                    <Icon name="folder" size={16} />
+                    <Icon name="image" size={16} />
                     <span>{t('toolbar.fileList')}</span>
-                  </button>
-                )}
-                {onOpenWorkspace && (
-                  <button className={quickMenuItemClass} onPointerDown={(e) => { e.preventDefault(); onOpenWorkspace(); setShowQuickMenu(false) }}>
-                    <Icon name="folderOpen" size={16} />
-                    <span>{t('toolbar.workspace')}</span>
                   </button>
                 )}
                 {onOpenSettings && (

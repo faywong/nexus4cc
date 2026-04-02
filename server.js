@@ -308,29 +308,26 @@ app.get('/api/browse', authMiddleware, (req, res) => {
   }
 })
 
-// GET /api/workspace/files — 浏览工作目录文件（支持文件和目录）
+// GET /api/workspace/files — 浏览文件系统（支持文件和目录，任意路径）
 app.get('/api/workspace/files', authMiddleware, (req, res) => {
   try {
-    let relPath = req.query.path || ''
-    // 安全检查：防止目录遍历
-    relPath = normalize(relPath).replace(/^(\.\.(\/|\|$))+/, '')
-    const fullPath = join(WORKSPACE_ROOT, relPath)
-    // 确保路径在 WORKSPACE_ROOT 内
-    if (!fullPath.startsWith(WORKSPACE_ROOT)) {
-      return res.status(403).json({ error: 'access denied' })
-    }
-    const entries = readdirSync(fullPath, { withFileTypes: true })
+    let p = req.query.path || WORKSPACE_ROOT
+    if (p === '~') p = WORKSPACE_ROOT
+    if (!isAbsolute(p)) p = join(WORKSPACE_ROOT, p)
+    p = normalize(p)
+    const entries = readdirSync(p, { withFileTypes: true })
       .filter(e => !e.name.startsWith('.')) // 隐藏文件不显示
       .map(e => {
-        const stat = statSync(join(fullPath, e.name))
+        const fullPath = join(p, e.name)
+        const st = statSync(fullPath)
         return {
           name: e.name,
           type: e.isDirectory() ? 'dir' : 'file',
-          size: e.isFile() ? stat.size : undefined,
-          mtime: stat.mtimeMs,
+          size: e.isFile() ? st.size : undefined,
+          mtime: st.mtimeMs,
         }
       })
-    res.json({ path: relPath, entries })
+    res.json({ path: p, entries })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -643,32 +640,6 @@ app.get('/api/session-cwd', authMiddleware, (req, res) => {
     res.json({ cwd, relative })
   } catch {
     res.json({ cwd: WORKSPACE_ROOT, relative: '' })
-  }
-})
-
-// GET /api/workspace/files — 列出工作区目录内容
-app.get('/api/workspace/files', authMiddleware, (req, res) => {
-  const relativePath = req.query.path || ''
-  const targetPath = join(WORKSPACE_ROOT, relativePath)
-  // 安全检查：确保路径在 WORKSPACE_ROOT 内
-  if (!targetPath.startsWith(WORKSPACE_ROOT)) {
-    return res.status(403).json({ error: 'Access denied' })
-  }
-  try {
-    const entries = readdirSync(targetPath, { withFileTypes: true })
-    const result = entries.map(entry => {
-      const fullPath = join(targetPath, entry.name)
-      const stat = statSync(fullPath)
-      return {
-        name: entry.name,
-        type: entry.isDirectory() ? 'dir' : 'file',
-        size: entry.isFile() ? stat.size : undefined,
-        mtime: stat.mtime.getTime()
-      }
-    })
-    res.json({ entries: result })
-  } catch (e) {
-    res.status(500).json({ error: e.message })
   }
 })
 
