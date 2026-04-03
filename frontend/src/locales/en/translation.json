@@ -9,6 +9,7 @@
     "rename": "Rename",
     "delete": "Delete",
     "edit": "Edit",
+    "creating": "Creating...",
     "loading": "Loading...",
     "refresh": "Refresh",
     "confirm": "Confirm",
@@ -50,7 +51,14 @@
     "parent": "Parent directory",
     "footer": "{{count}} items",
     "view": "View",
-    "download": "Download"
+    "download": "Download",
+    "newFolder": "New Folder",
+    "newFile": "New File",
+    "edit": "Edit",
+    "folderNamePlaceholder": "Folder name",
+    "fileNamePlaceholder": "Filename (e.g. readme.txt, notes.md)",
+    "fileExtensionsHint": "Supports .txt, .md, .json and any extension",
+    "chars": "chars"
   },
   "newChannel": {
     "title": "New Channel",

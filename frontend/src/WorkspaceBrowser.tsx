@@ -85,6 +85,18 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
   // 选中条目
   const [selectedName, setSelectedName] = useState<string | null>(null)
 
+  // 新建文件夹/文件对话框状态
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false)
+  const [showNewFileDialog, setShowNewFileDialog] = useState(false)
+  const [newItemName, setNewItemName] = useState('')
+  const [newItemError, setNewItemError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+
+  // 文件编辑器状态
+  const [editingFile, setEditingFile] = useState<{ name: string; path: string; content: string } | null>(null)
+  const [editorContent, setEditorContent] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+
   // 加载目录内容
   const loadEntries = useCallback(async (path: string) => {
     setLoading(true)
@@ -163,13 +175,105 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
     document.body.removeChild(a)
   }
 
-  // 双击处理：目录进入，文件打开
+  // 新建文件夹
+  async function createFolder() {
+    if (!newItemName.trim() || !currentPath) return
+    setIsCreating(true)
+    setNewItemError('')
+    try {
+      const r = await fetch('/api/workspace/mkdir', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: currentPath, name: newItemName.trim() }),
+      })
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to create folder')
+      }
+      setShowNewFolderDialog(false)
+      setNewItemName('')
+      loadEntries(currentPath)
+    } catch (e: any) {
+      setNewItemError(e.message || 'Failed to create folder')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  // 新建文件
+  async function createFile() {
+    if (!newItemName.trim() || !currentPath) return
+    setIsCreating(true)
+    setNewItemError('')
+    try {
+      const r = await fetch('/api/workspace/files', {
+        method: 'POST',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: currentPath, name: newItemName.trim(), content: '' }),
+      })
+      if (!r.ok) {
+        const data = await r.json().catch(() => ({}))
+        throw new Error(data.error || 'Failed to create file')
+      }
+      setShowNewFileDialog(false)
+      setNewItemName('')
+      loadEntries(currentPath)
+    } catch (e: any) {
+      setNewItemError(e.message || 'Failed to create file')
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
+  // 打开文件编辑器
+  async function openEditor(name: string) {
+    if (!currentPath) return
+    const filePath = currentPath.endsWith('/') ? `${currentPath}${name}` : `${currentPath}/${name}`
+    try {
+      const r = await fetch(`/api/workspace/file?path=${encodeURIComponent(filePath)}`, { headers })
+      if (!r.ok) throw new Error('Failed to load file')
+      const data = await r.json()
+      setEditingFile({ name, path: filePath, content: data.content })
+      setEditorContent(data.content)
+    } catch (e: any) {
+      setError(e.message || 'Failed to open file')
+    }
+  }
+
+  // 保存文件
+  async function saveFile() {
+    if (!editingFile) return
+    setIsSaving(true)
+    try {
+      const r = await fetch('/api/workspace/file', {
+        method: 'PUT',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: editingFile.path, content: editorContent }),
+      })
+      if (!r.ok) throw new Error('Failed to save file')
+      setEditingFile(null)
+      setEditorContent('')
+    } catch (e: any) {
+      setError(e.message || 'Failed to save file')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  // 双击处理：目录进入，文件在编辑器中打开
   function handleDoubleClick(entry: FileEntry) {
     if (entry.type === 'dir') {
       navigateTo(entry.name)
     } else {
-      openFile(entry.name)
+      openEditor(entry.name)
     }
+  }
+
+  // 判断是否为文本文件
+  function isTextFile(name: string): boolean {
+    const ext = name.split('.').pop()?.toLowerCase() || ''
+    const textExts = ['txt', 'md', 'js', 'ts', 'jsx', 'tsx', 'json', 'yml', 'yaml', 'toml', 'css', 'html', 'htm', 'xml', 'svg', 'sh', 'bash', 'zsh', 'py', 'go', 'rs', 'java', 'c', 'cpp', 'h', 'hpp', 'log', 'env', 'dockerfile', 'gitignore']
+    return textExts.includes(ext) || !ext
   }
 
   // 构建面包屑路径（使用绝对路径）
@@ -303,12 +407,43 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-nexus-border flex-shrink-0 flex items-center justify-between gap-2">
-        <span className="text-nexus-muted text-xs">
-          {currentPath && t('workspace.footer', { count: entries.length })}
-        </span>
+        <div className="flex items-center gap-2">
+          <span className="text-nexus-muted text-xs">
+            {currentPath && t('workspace.footer', { count: entries.length })}
+          </span>
+          {/* 新建按钮 */}
+          <div className="flex items-center gap-1.5 ml-2">
+            <button
+              onClick={() => setShowNewFolderDialog(true)}
+              className="flex items-center gap-1 px-2 py-1.5 bg-nexus-bg-2 hover:bg-nexus-bg-2/80 text-nexus-text text-xs rounded border border-nexus-border transition-colors"
+              title={t('workspace.newFolder')}
+            >
+              <Icon name="folder" size={14} />
+              <span className="hidden sm:inline">{t('workspace.newFolder')}</span>
+            </button>
+            <button
+              onClick={() => setShowNewFileDialog(true)}
+              className="flex items-center gap-1 px-2 py-1.5 bg-nexus-bg-2 hover:bg-nexus-bg-2/80 text-nexus-text text-xs rounded border border-nexus-border transition-colors"
+              title={t('workspace.newFile')}
+            >
+              <Icon name="file" size={14} />
+              <span className="hidden sm:inline">{t('workspace.newFile')}</span>
+            </button>
+          </div>
+        </div>
         {/* 文件操作按钮 */}
         {selectedEntry?.type === 'file' && (
           <div className="flex items-center gap-2">
+            {isTextFile(selectedEntry.name) && (
+              <button
+                onClick={() => openEditor(selectedEntry.name)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-nexus-bg-2 hover:bg-nexus-bg-2/80 text-nexus-text text-xs rounded border border-nexus-border transition-colors"
+                title={t('workspace.edit')}
+              >
+                <Icon name="edit" size={14} />
+                <span className="hidden sm:inline">{t('workspace.edit')}</span>
+              </button>
+            )}
             <button
               onClick={() => openFile(selectedEntry.name)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-nexus-bg-2 hover:bg-nexus-bg-2/80 text-nexus-text text-xs rounded border border-nexus-border transition-colors"
@@ -328,6 +463,126 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
           </div>
         )}
       </div>
+
+      {/* 新建文件夹对话框 */}
+      {showNewFolderDialog && (
+        <div className="fixed inset-0 z-[460] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-nexus-bg rounded-lg border border-nexus-border w-full max-w-sm p-4">
+            <h3 className="text-nexus-text font-medium mb-3">{t('workspace.newFolder')}</h3>
+            <input
+              type="text"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && createFolder()}
+              placeholder={t('workspace.folderNamePlaceholder')}
+              className="w-full px-3 py-2 bg-nexus-bg-2 border border-nexus-border rounded text-nexus-text text-sm focus:outline-none focus:border-nexus-accent"
+              autoFocus
+            />
+            {newItemError && (
+              <div className="text-nexus-error text-xs mt-2">{newItemError}</div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => { setShowNewFolderDialog(false); setNewItemName(''); setNewItemError('') }}
+                className="px-3 py-1.5 text-nexus-text-2 text-sm hover:text-nexus-text"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={createFolder}
+                disabled={!newItemName.trim() || isCreating}
+                className="px-3 py-1.5 bg-nexus-accent text-white text-sm rounded disabled:opacity-50"
+              >
+                {isCreating ? t('common.creating') : t('common.create')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 新建文件对话框 */}
+      {showNewFileDialog && (
+        <div className="fixed inset-0 z-[460] bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-nexus-bg rounded-lg border border-nexus-border w-full max-w-sm p-4">
+            <h3 className="text-nexus-text font-medium mb-3">{t('workspace.newFile')}</h3>
+            <input
+              type="text"
+              value={newItemName}
+              onChange={(e) => setNewItemName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && createFile()}
+              placeholder={t('workspace.fileNamePlaceholder')}
+              className="w-full px-3 py-2 bg-nexus-bg-2 border border-nexus-border rounded text-nexus-text text-sm focus:outline-none focus:border-nexus-accent"
+              autoFocus
+            />
+            <div className="text-nexus-muted text-xs mt-2">
+              {t('workspace.fileExtensionsHint')}
+            </div>
+            {newItemError && (
+              <div className="text-nexus-error text-xs mt-2">{newItemError}</div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <button
+                onClick={() => { setShowNewFileDialog(false); setNewItemName(''); setNewItemError('') }}
+                className="px-3 py-1.5 text-nexus-text-2 text-sm hover:text-nexus-text"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={createFile}
+                disabled={!newItemName.trim() || isCreating}
+                className="px-3 py-1.5 bg-nexus-accent text-white text-sm rounded disabled:opacity-50"
+              >
+                {isCreating ? t('common.creating') : t('common.create')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 文件编辑器 */}
+      {editingFile && (
+        <div className="fixed inset-0 z-[470] bg-nexus-bg flex flex-col">
+          {/* Editor Header */}
+          <div className="flex items-center justify-between px-4 py-3 border-b border-nexus-border flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <Icon name="file" size={18} />
+              <span className="text-nexus-text font-medium text-sm truncate">
+                {editingFile.name}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={saveFile}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-nexus-accent hover:bg-nexus-accent/90 text-white text-xs rounded transition-colors disabled:opacity-50"
+              >
+                <Icon name="save" size={14} />
+                {isSaving ? t('common.saving') : t('common.save')}
+              </button>
+              <button
+                onClick={() => { setEditingFile(null); setEditorContent('') }}
+                className="bg-transparent border-none text-nexus-text-2 cursor-pointer p-1.5 flex items-center justify-center rounded-md"
+              >
+                <Icon name="x" size={20} />
+              </button>
+            </div>
+          </div>
+          {/* Editor Content */}
+          <div className="flex-1 p-4 overflow-hidden">
+            <textarea
+              value={editorContent}
+              onChange={(e) => setEditorContent(e.target.value)}
+              className="w-full h-full bg-nexus-bg-2 border border-nexus-border rounded p-3 text-nexus-text text-sm font-mono resize-none focus:outline-none focus:border-nexus-accent"
+              spellCheck={false}
+            />
+          </div>
+          {/* Editor Footer */}
+          <div className="px-4 py-2 border-t border-nexus-border flex items-center justify-between text-xs text-nexus-muted">
+            <span>{editorContent.length} {t('workspace.chars')}</span>
+            <span>{editingFile.path}</span>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

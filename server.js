@@ -374,6 +374,84 @@ app.use('/workspace', (req, res, next) => {
   }
 })
 
+// POST /api/workspace/mkdir — 创建文件夹
+app.post('/api/workspace/mkdir', authMiddleware, (req, res) => {
+  try {
+    let { path: targetPath, name } = req.body
+    if (!name) return res.status(400).json({ error: 'name required' })
+    if (!isAbsolute(targetPath)) targetPath = join(WORKSPACE_ROOT, targetPath)
+    targetPath = normalize(targetPath)
+    const dirPath = join(targetPath, name)
+    if (dirPath.includes('..')) {
+      return res.status(403).json({ error: 'invalid path' })
+    }
+    if (existsSync(dirPath)) {
+      return res.status(409).json({ error: 'already exists' })
+    }
+    mkdirSync(dirPath, { recursive: true })
+    res.json({ ok: true, path: dirPath })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/workspace/files — 创建新文件
+app.post('/api/workspace/files', authMiddleware, (req, res) => {
+  try {
+    let { path: targetPath, name, content = '' } = req.body
+    if (!name) return res.status(400).json({ error: 'name required' })
+    if (!isAbsolute(targetPath)) targetPath = join(WORKSPACE_ROOT, targetPath)
+    targetPath = normalize(targetPath)
+    const filePath = join(targetPath, name)
+    if (filePath.includes('..')) {
+      return res.status(403).json({ error: 'invalid path' })
+    }
+    if (existsSync(filePath)) {
+      return res.status(409).json({ error: 'already exists' })
+    }
+    writeFileSync(filePath, content, 'utf8')
+    res.json({ ok: true, path: filePath })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/workspace/file — 读取文件内容
+app.get('/api/workspace/file', authMiddleware, (req, res) => {
+  try {
+    let p = req.query.path || ''
+    if (!isAbsolute(p)) p = join(WORKSPACE_ROOT, p)
+    p = normalize(p)
+    if (p.includes('..')) {
+      return res.status(403).json({ error: 'invalid path' })
+    }
+    if (!existsSync(p) || !statSync(p).isFile()) {
+      return res.status(404).json({ error: 'not found' })
+    }
+    const content = readFileSync(p, 'utf8')
+    res.json({ path: p, content })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/workspace/file — 保存文件内容
+app.put('/api/workspace/file', authMiddleware, (req, res) => {
+  try {
+    let { path: filePath, content = '' } = req.body
+    if (!filePath) return res.status(400).json({ error: 'path required' })
+    if (!isAbsolute(filePath)) filePath = join(WORKSPACE_ROOT, filePath)
+    filePath = normalize(filePath)
+    if (filePath.includes('..')) {
+      return res.status(403).json({ error: 'invalid path' })
+    }
+    writeFileSync(filePath, content, 'utf8')
+    res.json({ ok: true, path: filePath })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // POST /api/upload — 上传文件到指定 session 的 cwd（F-14）
 // body: multipart/form-data, fields: file, session_name (optional)
 const upload = multer({

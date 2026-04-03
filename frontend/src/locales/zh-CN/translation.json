@@ -9,6 +9,7 @@
     "rename": "重命名",
     "delete": "删除",
     "edit": "编辑",
+    "creating": "创建中...",
     "loading": "加载中...",
     "refresh": "刷新",
     "confirm": "确认",
@@ -50,7 +51,14 @@
     "parent": "上级目录",
     "footer": "共 {{count}} 个项目",
     "view": "查看",
-    "download": "下载"
+    "download": "下载",
+    "newFolder": "新建文件夹",
+    "newFile": "新建文件",
+    "edit": "编辑",
+    "folderNamePlaceholder": "文件夹名称",
+    "fileNamePlaceholder": "文件名 (如: readme.txt, notes.md)",
+    "fileExtensionsHint": "支持 .txt, .md, .json 等任意扩展名",
+    "chars": "字符"
   },
   "newChannel": {
     "title": "新建频道",
