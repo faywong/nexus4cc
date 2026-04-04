@@ -733,15 +733,6 @@ export default function WorkspaceBrowser({ token, onClose, initialPath = '', cur
             <div className="px-3 py-1.5 text-nexus-text text-xs font-medium border-b border-nexus-border truncate" title={contextMenu.entry.name}>
               {contextMenu.entry.name}
             </div>
-            {contextMenu.entry.type === 'dir' && (
-              <button
-                onClick={() => { navigateTo(contextMenu.entry.name); setContextMenu(null) }}
-                className="w-full text-left px-3 py-2 text-sm flex items-center gap-2 hover:bg-nexus-bg-2 transition-colors text-nexus-text"
-              >
-                <Icon name="folderOpen" size={14} />
-                {t('workspace.enterDir')}
-              </button>
-            )}
             {contextMenu.entry.type === 'file' && isTextFile(contextMenu.entry.name) && (
               <button
                 onClick={() => { openEditor(contextMenu.entry.name); setContextMenu(null) }}
