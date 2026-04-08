@@ -67,16 +67,16 @@ export const ALL_KEYS: KeyDef[] = [
 
 // Reorganized factory defaults by priority and category grouping
 export const FACTORY_PINNED = [
-  // Control (most used)
-  'esc', 'ctrl-c', 'enter',
+  // Control
+  'esc',
   // Navigation
   'up', 'down', 'left', 'right',
-  // Editing
-  'backspace', 'tab',
+  // Editing — enter left of backspace
+  'enter', 'backspace', 'tab',
   // Control extras
   'ctrl-l', 'ctrl-r',
-  // Input
-  'backslash', 'ctrl-v',
+  // Input — ^C right of ^V
+  'backslash', 'ctrl-v', 'ctrl-c',
 ]
 
 export const FACTORY_EXPANDED = [
